@@ -1,4 +1,4 @@
-Here is a complete, professional `README.md` file tailored to your project. It includes the installation steps, how to run the detection using your specific weights (`vit_final`), and proper credits.
+# Safety Helmet Detection
 
 ### **How to use this:**
 
