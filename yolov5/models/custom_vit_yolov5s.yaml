@@ -1,0 +1,36 @@
+nc: 3
+depth_multiple: 1.0
+width_multiple: 1.0
+
+anchors:
+  - [10,13, 16,30, 33,23]
+  - [30,61, 62,45, 59,119]
+  - [116,90, 156,198, 373,326]
+
+# backbone: [from, number, module, args]
+backbone:
+  - [-1, 1, models.backbone_vit.SimpleViTBackbone, [3, 256, vit_tiny_patch16_224, True]]  # Layer 0: Stride 16
+  - [-1, 1, Conv, [512, 3, 2]]        # Layer 1: Stride 32
+  - [-1, 1, SPPF, [512, 5]]           # Layer 2: Stride 32
+
+head:
+  - [-1, 1, Conv, [256, 1, 1]]        # Layer 3
+  - [-1, 1, nn.Upsample, [None, 2, nearest]]  # Layer 4: Stride 16
+  - [[-1, 0], 1, Concat, [1]]         # Layer 5: P4 (Head) + P4 (Backbone)
+  - [-1, 3, C3, [256, False]]         # Layer 6: Stride 16 (P4)
+  
+  - [-1, 1, Conv, [128, 1, 1]]        # Layer 7
+  - [-1, 1, nn.Upsample, [None, 2, nearest]]  # Layer 8: Stride 8 (P3)
+  # DELETED CONCAT LAYER HERE because there is no P3 backbone feature
+  - [-1, 3, C3, [128, False]]         # Layer 9: Stride 8 (P3)
+  
+  - [-1, 1, Conv, [256, 3, 2]]        # Layer 10: Stride 16
+  - [[-1, 6], 1, Concat, [1]]         # Layer 11: Concat with Layer 6 (P4)
+  - [-1, 3, C3, [256, False]]         # Layer 12: Stride 16 (P4)
+  
+  - [-1, 1, Conv, [512, 3, 2]]        # Layer 13: Stride 32
+  - [[-1, 2], 1, Concat, [1]]         # Layer 14: Concat with Layer 2 (P5)
+  - [-1, 3, C3, [512, False]]         # Layer 15: Stride 32 (P5)
+  
+  # Detect layers shifted by -1 due to deletion: [10, 13, 16] -> [9, 12, 15]
+  - [[9, 12, 15], 1, Detect, [nc, anchors]]  # Layer 16
